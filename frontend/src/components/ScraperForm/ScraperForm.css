@@ -1,0 +1,55 @@
+.scraper-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.scraper-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.submit-button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button:hover {
+  background-color: #0056b3;
+}
+
+.submit-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.scraping-results {
+  margin-top: 20px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .scraper-container {
+    padding: 0 20px;
+  }
+}

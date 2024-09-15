@@ -1,0 +1,59 @@
+# Dependencies
+/frontend/node_modules
+/backend/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/frontend/coverage
+/backend/coverage
+
+# Production
+/frontend/build
+/backend/build
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+/frontend/.env
+/backend/.env
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backend specific
+/backend/dist
+/backend/logs
+
+# Frontend specific
+/frontend/.cache
+/frontend/.eslintcache

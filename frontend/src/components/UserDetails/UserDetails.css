@@ -1,0 +1,81 @@
+.user-details {
+    /* max-width: 800px; */
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .user-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .user-details h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  
+  .user-details p {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+  }
+  
+  .user-details table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2px;
+  }
+  
+  .user-details th,
+  .user-details td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    font-size: 14px;
+    text-align: left;
+  }
+  
+  .user-details th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  .user-details tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .user-details .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+  }
+  
+  .user-details .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @media (max-width: 768px) {
+    .user-details {
+      padding: 10px;
+    }
+  
+    .user-details table {
+      font-size: 0.9rem;
+    }
+  
+    .user-details th,
+    .user-details td {
+      padding: 8px;
+    }
+  }
