@@ -112,7 +112,9 @@ const AuctionList = () => {
             />
           </div>
           <div className="action-buttons">
-            <button onClick={resetFilters} className="reset-button">Reset Filters</button>
+            <button onClick={resetFilters} className="reset-button">
+              Reset Filters
+            </button>
             <div className="export-buttons">
               <ExportButton auctionData={auctions} format="xlsx" />
               <ExportButton auctionData={auctions} format="csv" />
@@ -121,7 +123,10 @@ const AuctionList = () => {
         </div>
         <div className="filters-row">
           <div className="sort-filters">
-            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
               <option value={10}>10 per page</option>
               <option value={20}>20 per page</option>
               <option value={50}>50 per page</option>
@@ -147,6 +152,7 @@ const AuctionList = () => {
               <thead>
                 <tr>
                   <th>Domain Name</th>
+                  <th>Version</th>
                   <th>Bid 1 Amount</th>
                   <th>Bid 1 User</th>
                   <th>Bid 1 Date</th>
@@ -158,23 +164,52 @@ const AuctionList = () => {
               <tbody>
                 {auctions.map((auction) => (
                   <tr key={auction.id}>
-                    <td>{auction.domain_name}</td>
+                    <td>
+                      {" "}
+                      <a
+                        href={`https://auction.whois.ai/auctions/view/${auction.domain_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {auction.domain_name}
+                      </a>
+                    </td>
+                    <td>{auction.domain_version}</td>
                     <td>{auction.bid1_amount}</td>
-                    <td onClick={() => handleUserClick(auction.bid1_user)} className="user-link">{auction.bid1_user}</td>
+                    <td
+                      onClick={() => handleUserClick(auction.bid1_user)}
+                      className="user-link"
+                    >
+                      {auction.bid1_user}
+                    </td>
                     <td>{new Date(auction.bid1_date).toLocaleString()}</td>
                     <td>{auction.bid2_amount}</td>
-                    <td onClick={() => handleUserClick(auction.bid2_user)} className="user-link">{auction.bid2_user}</td>
+                    <td
+                      onClick={() => handleUserClick(auction.bid2_user)}
+                      className="user-link"
+                    >
+                      {auction.bid2_user}
+                    </td>
                     <td>{new Date(auction.bid2_date).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-            <div className="page-navigation">
-              <button onClick={() => setPage(page - 1)} disabled={page === 1}>Previous</button>
-              <span>Rows[{totalItems}] Page {page} of {totalPages}</span>
-              <button onClick={() => setPage(page + 1)} disabled={page === totalPages}>Next</button>
-            </div>
+          <div className="page-navigation">
+            <button onClick={() => setPage(page - 1)} disabled={page === 1}>
+              Previous
+            </button>
+            <span>
+              Rows[{totalItems}] Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </>
       )}
     </div>

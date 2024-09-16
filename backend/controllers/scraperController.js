@@ -15,7 +15,11 @@ const scrapeAuctions = async (req, res) => {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     });
   } catch (error) {
-    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
+      res.status(404).write(`data: ${JSON.stringify({ error: error.message, type: 'AUTHENTICATION_ERROR' })}\n\n`);
+    } else {
+      res.status(500).write(`data: ${JSON.stringify({ error: error.message, type: 'GENERAL_ERROR' })}\n\n`);
+    }
   } finally {
     res.end();
   }

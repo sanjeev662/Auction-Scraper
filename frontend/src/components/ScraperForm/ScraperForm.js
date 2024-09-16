@@ -15,12 +15,8 @@ const ScraperForm = () => {
   const [error, setError] = useState(null);
   const [auctionData, setAuctionData] = useState([]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: name === 'startPage' || name === 'endPage' ? parseInt(value) : value
-    }));
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -34,28 +30,23 @@ const ScraperForm = () => {
     setAuctionData([]);
 
     const onDataReceived = (data) => {
-      if (data.done) {
-        setIsLoading(false);
-        if (data.errors && data.errors.length > 0) {
-          const authError = data.errors.find(err => err.includes('AUTHENTICATION_ERROR'));
-          if (authError) {
-            setError(authError.replace('AUTHENTICATION_ERROR: ', ''));
-          } else {
-            setError(`Scraping completed with ${data.errors.length} errors.`);
-          }
-        }
-      } else {
-        setAuctionData(prevData => [...prevData, data]);
-      }
+      setAuctionData(prevData => [...prevData, data]);
     };
 
-    const onError = (error) => {
-      if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
-        setError(error.message.replace('AUTHENTICATION_ERROR: ', ''));
+    const onError = (errorMessage) => {
+      if (errorMessage.includes('Authentication failed')) {
+        setError('Authentication failed. Please check your username and password.');
       } else {
-        setError(error.message || 'An error occurred during scraping');
+        setError(errorMessage);
       }
       setIsLoading(false);
+    };
+
+    const onComplete = (errors) => {
+      setIsLoading(false);
+      if (errors && errors.length > 0) {
+        setError(`Scraping completed with ${errors.length} errors.`);
+      }
     };
 
     try {
@@ -66,10 +57,13 @@ const ScraperForm = () => {
         formData.password,
         formData.sortBy,
         formData.sortDirection,
-        onDataReceived
+        onDataReceived,
+        onError,
+        onComplete
       );
     } catch (error) {
-      onError(error);
+      setIsLoading(false);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -85,7 +79,7 @@ const ScraperForm = () => {
               name="startPage"
               type="number"
               value={formData.startPage}
-              onChange={handleInputChange}
+              onChange={handleChange}
               min="1"
               required
             />
@@ -97,7 +91,7 @@ const ScraperForm = () => {
               name="endPage"
               type="number"
               value={formData.endPage}
-              onChange={handleInputChange}
+              onChange={handleChange}
               min="1"
               required
             />
@@ -110,7 +104,7 @@ const ScraperForm = () => {
               id="sortBy"
               name="sortBy"
               value={formData.sortBy}
-              onChange={handleInputChange}
+              onChange={handleChange}
             >
               <option value="Domain.name">Domain Name</option>
               <option value="price">Price</option>
@@ -124,7 +118,7 @@ const ScraperForm = () => {
               id="sortDirection"
               name="sortDirection"
               value={formData.sortDirection}
-              onChange={handleInputChange}
+              onChange={handleChange}
             >
               <option value="asc">Ascending</option>
               <option value="desc">Descending</option>
@@ -139,7 +133,7 @@ const ScraperForm = () => {
               name="username"
               type="text"
               value={formData.username}
-              onChange={handleInputChange}
+              onChange={handleChange}
               required
             />
           </div>
@@ -150,7 +144,7 @@ const ScraperForm = () => {
               name="password"
               type="password"
               value={formData.password}
-              onChange={handleInputChange}
+              onChange={handleChange}
               required
             />
           </div>

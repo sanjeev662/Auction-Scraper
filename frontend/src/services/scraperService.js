@@ -21,16 +21,19 @@ export function scrapeAuctions(startPage, endPage, username, password, sortBy, s
           const jsonData = line.trim().substring(5);
           try {
             const data = JSON.parse(jsonData);
-            console.log("Received data:", data);
-            if (data.done) {
-              onComplete(data.errors);
-            } else if (data.error) {
+            if (data.error) {
               onError(data.error);
+              if (data.type === 'AUTHENTICATION_ERROR') {
+                throw new Error('Authentication failed');
+              }
+            } else if (data.done) {
+              onComplete(data.errors);
             } else {
               onDataReceived(data);
             }
           } catch (error) {
             console.error('Error parsing JSON:', error);
+            onError('Error parsing server response');
           }
         }
       });
@@ -38,12 +41,11 @@ export function scrapeAuctions(startPage, endPage, username, password, sortBy, s
     .catch(error => {
       if (axios.isCancel(error)) {
         console.log('Request canceled:', error.message);
+      } else if (error.response && error.response.status === 404) {
+        onError('Authentication failed. Please check your credentials.');
       } else {
-        onError('Request failed:', error);
+        onError('Request failed: ' + error.message);
       }
-    })
-    .finally(() => {
-      onComplete();
     });
 
   return () => {
