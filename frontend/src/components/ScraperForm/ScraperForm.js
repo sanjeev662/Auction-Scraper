@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { scrapeAuctions } from '../../services/scraperService';
 import './ScraperForm.css';
 
@@ -50,7 +50,7 @@ const ScraperForm = () => {
     };
 
     try {
-      await scrapeAuctions(
+      scrapeAuctions(
         formData.startPage,
         formData.endPage,
         formData.username,
@@ -163,6 +163,17 @@ const ScraperForm = () => {
         <div className="scraping-results">
           <h2>Scraping Results</h2>
           <p>Domains scraped: {auctionData.length}</p>
+          <div className="auction-grid">
+            {auctionData.map((auction, index) => (
+              <div key={index} className="auction-card">
+                <h3>{auction.domain_name}</h3>
+                <p><strong>Price:</strong> {auction.domain_price}</p>
+                <p><strong>Bids:</strong> {auction.total_bids}</p>
+                <p><strong>Close Date:</strong> {auction.close_date}</p>
+                <p><strong>Top Bid:</strong> {auction.top_bids[0].amount} by {auction.top_bids[0].user}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
