@@ -110,9 +110,9 @@ const getDomainData = async (domainName, domainId, totalBids, domainPrice, close
       const maxVersion = await auctionDao.getMaxDomainVersion(domainName);
       const domainVersion = maxVersion + 1;
 
-      console.log(`Top Bids for domain: ${domainName} fetched successfully.`);
+      console.log(`Top Bids for domain: ${domainName}`, topBids);
       return {
-        domain_id: domainId,
+        domain_id: domainId, 
         domain_name: domainName,
         domain_version: domainVersion,
         total_bids: totalBids,
@@ -128,7 +128,6 @@ const getDomainData = async (domainName, domainId, totalBids, domainPrice, close
 };
 
 const navigateToBidsPage = async (bidsUrl, username, password) => {
-  console.log(`Navigating to bids page: ${bidsUrl}`);
   let browser;
   try {
     console.log('Launching browser');
@@ -179,7 +178,6 @@ const navigateToBidsPage = async (bidsUrl, username, password) => {
     }
 
     // Navigate to the bids page
-    console.log(`Navigating to: ${bidsUrl}`);
     await page.goto(bidsUrl, { waitUntil: 'networkidle0' });
 
     console.log('Returning page content');
