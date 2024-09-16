@@ -2,7 +2,7 @@ const scraperService = require('../services/scraperService');
 const auctionDao = require('../dao/auctionDao');
 
 const scrapeAuctions = async (req, res) => {
-  const { numPages, username, password } = req.body;
+  const { startPage, endPage, username, password, sortBy, sortDirection } = req.body;
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -11,7 +11,7 @@ const scrapeAuctions = async (req, res) => {
   });
 
   try {
-    await scraperService.scrapeAuctions(numPages, username, password, (data) => {
+    await scraperService.scrapeAuctions(startPage, endPage, username, password, sortBy, sortDirection, (data) => {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     });
   } catch (error) {

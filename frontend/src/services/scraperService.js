@@ -1,13 +1,12 @@
-
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
-export function scrapeAuctions(numPages, username, password, onDataReceived, onError, onComplete) {
+export function scrapeAuctions(startPage, endPage, username, password, sortBy, sortDirection, onDataReceived, onError, onComplete) {
   const source = axios.CancelToken.source();
 
   axios.post(`${API_URL}/scrape`, 
-    { numPages, username, password },
+    { startPage, endPage, username, password, sortBy, sortDirection },
     {
       cancelToken: source.token,
       responseType: 'text',

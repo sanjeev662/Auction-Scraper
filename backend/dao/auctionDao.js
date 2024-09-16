@@ -2,9 +2,10 @@ const db = require('../config/database');
 
 const saveAuctions = async (auctions) => {
   const query = `
-    INSERT INTO auctions (domain_name, bid1_amount, bid1_user, bid1_date, bid2_amount, bid2_user, bid2_date)
+    INSERT INTO auctions (domain_id, domain_name, domain_version, bid1_amount, bid1_user, bid1_date, bid2_amount, bid2_user, bid2_date)
     VALUES ?
     ON DUPLICATE KEY UPDATE
+    domain_version = VALUES(domain_version),
     bid1_amount = VALUES(bid1_amount),
     bid1_user = VALUES(bid1_user),
     bid1_date = VALUES(bid1_date),
@@ -14,7 +15,9 @@ const saveAuctions = async (auctions) => {
   `;
 
   const values = auctions.map(auction => [
+    auction.domain_id,
     auction.domain_name,
+    auction.domain_version,
     parseFloat(auction.top_bids[0]?.amount.replace(/[^0-9.]/g, '')) || null,
     auction.top_bids[0]?.user || null,
     auction.top_bids[0]?.date || null,
@@ -94,8 +97,20 @@ const getUserBidStats = async (username) => {
   }
 };
 
+const checkDomainExists = async (domainId) => {
+  const [result] = await db.query('SELECT * FROM auctions WHERE domain_id = ?', [domainId]);
+  return result.length > 0;
+};
+
+const getMaxDomainVersion = async (domainName) => {
+  const [result] = await db.query('SELECT MAX(domain_version) as max_version FROM auctions WHERE domain_name = ?', [domainName]);
+  return result[0].max_version || 0;
+};
+
 module.exports = {
   saveAuctions,
   getAuctions,
-  getUserBidStats
+  getUserBidStats,
+  checkDomainExists,
+  getMaxDomainVersion
 };
