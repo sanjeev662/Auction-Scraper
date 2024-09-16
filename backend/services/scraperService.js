@@ -36,9 +36,13 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
 
         for (let i = 0; i < domainLinks.length; i++) {
           const domainElement = $(domainLinks[i]);
-          const domainName = domainElement.text().trim();
+
           const auctionUrl = baseUrl + domainElement.attr('href');
           const domainId = auctionUrl.split('/').pop();
+          const domainName = domainElement.text().trim();
+          const domainPrice = domainElement.closest('tr').find('td[data-label="Price"]').text().trim();
+          const totalBids = parseInt(domainElement.closest('tr').find('td[data-label="Bids"]').text().trim(), 10) || 0;
+          const closeDate = domainElement.closest('tr').find('td[data-label="Close Date"]').text().trim();
 
           console.log(`Processing domain: ${domainName} (ID: ${domainId})`);
 
@@ -49,8 +53,7 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
               continue;
             }
 
-            console.log(`Fetching data for domain: ${domainName}`);
-            const data = await getDomainData(domainName, domainId, username, password);
+            const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password);
             if (data) {
               console.log(`Saving data for domain: ${domainName}`);
               await auctionDao.saveAuctions([data]);
@@ -61,9 +64,6 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
           } catch (error) {
             console.error(`Error processing domain ${domainName}:`, error);
             errors.push(`Failed to scrape: ${auctionUrl}`);
-            if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
-              throw error; // Re-throw authentication errors to stop the process
-            }
           }
           console.log(`Waiting 1 second before next domain`);
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -71,9 +71,6 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
       } catch (pageError) {
         console.error(`Error scraping page ${page}:`, pageError);
         errors.push(`Failed to scrape page ${page}: ${pageError.message}`);
-        if (pageError.message.startsWith('AUTHENTICATION_ERROR:')) {
-          throw pageError; // Re-throw authentication errors to stop the process
-        }
       }
     }
 
@@ -89,15 +86,15 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
   }
 };
 
-const getDomainData = async (domainName, domainId, username, password, retries = 3) => {
-  console.log(`Getting data for domain: ${domainName} (ID: ${domainId})`);
+const getDomainData = async (domainName, domainId, totalBids, domainPrice, closeDate, username, password, retries = 3) => {
+  console.log(`Fetching data for ${domainName}`);
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const bidsUrl = `${baseUrl}/bids/index/${domainId}`;
       console.log(`Navigating to bids page: ${bidsUrl}`);
       const bidsPageContent = await navigateToBidsPage(bidsUrl, username, password);
 
-      console.log(`Parsing bids for domain: ${domainName}`);
+      console.log(`Parsing Top Bids for domain: ${domainName}`);
       const $bids = cheerio.load(bidsPageContent);
       const topBids = [];
       $bids('table.table-hover tr').slice(1, 3).each((index, element) => {
@@ -110,15 +107,17 @@ const getDomainData = async (domainName, domainId, username, password, retries =
         topBids.push(bid);
       });
 
-      console.log(`Getting max domain version for: ${domainName}`);
       const maxVersion = await auctionDao.getMaxDomainVersion(domainName);
       const domainVersion = maxVersion + 1;
 
-      console.log(`Returning data for domain: ${domainName}`);
+      console.log(`Top Bids for domain: ${domainName} fetched successfully.`);
       return {
         domain_id: domainId,
         domain_name: domainName,
         domain_version: domainVersion,
+        total_bids: totalBids,
+        domain_price: domainPrice,
+        close_date: closeDate,
         top_bids: topBids
       };
     } catch (error) {

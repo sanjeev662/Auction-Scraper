@@ -27,8 +27,8 @@ const scrapeAuctions = async (req, res) => {
 
 const getAuctions = async (req, res) => {
   try {
-    const { page = 1, limit = 20, sortBy = 'bid1_date', sortOrder = 'desc', search, bid1DateStart, bid1DateEnd, userSearch } = req.query;
-    const auctions = await auctionDao.getAuctions(page, limit, sortBy, sortOrder, search, bid1DateStart, bid1DateEnd, userSearch);
+    const { page = 1, limit = 20, sortBy = 'bid1_date', sortOrder = 'desc', search, closeDateStart, closeDateEnd, userSearch } = req.query;
+    const auctions = await auctionDao.getAuctions(page, limit, sortBy, sortOrder, search, closeDateStart, closeDateEnd, userSearch);
     res.json(auctions);
   } catch (error) {
     res.status(500).json({ error: error.message });

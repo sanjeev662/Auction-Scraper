@@ -12,8 +12,8 @@ const AuctionList = () => {
   const [sortBy, setSortBy] = useState('bid1_date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [search, setSearch] = useState('');
-  const [bid1DateStart, setBid1DateStart] = useState('');
-  const [bid1DateEnd, setBid1DateEnd] = useState('');
+  const [closeDateStart, setCloseDateStart] = useState('');
+  const [closeDateEnd, setCloseDateEnd] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [pageSize, setPageSize] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,8 +28,8 @@ const AuctionList = () => {
         sortBy,
         sortOrder,
         search,
-        bid1DateStart,
-        bid1DateEnd,
+        closeDateStart,
+        closeDateEnd,
         userSearch
       });
       setAuctions(response.auctions);
@@ -40,7 +40,7 @@ const AuctionList = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, sortBy, sortOrder, search, bid1DateStart, bid1DateEnd, userSearch]);
+  }, [page, pageSize, sortBy, sortOrder, search, closeDateStart, closeDateEnd, userSearch]);
 
   useEffect(() => {
     fetchAuctions();
@@ -58,8 +58,8 @@ const AuctionList = () => {
 
   const resetFilters = () => {
     setSearch('');
-    setBid1DateStart('');
-    setBid1DateEnd('');
+    setCloseDateStart('');
+    setCloseDateEnd('');
     setUserSearch('');
     setPageSize(20);
     setSortBy('bid1_date');
@@ -68,9 +68,9 @@ const AuctionList = () => {
   };
 
   const validateDates = () => {
-    if (bid1DateStart && bid1DateEnd && new Date(bid1DateStart) > new Date(bid1DateEnd)) {
+    if (closeDateStart && closeDateEnd && new Date(closeDateStart) > new Date(closeDateEnd)) {
       alert('Start date cannot be later than end date');
-      setBid1DateEnd('');
+      setCloseDateEnd('');
     }
   };
 
@@ -95,18 +95,18 @@ const AuctionList = () => {
             <input
               type="date"
               placeholder="Start date"
-              value={bid1DateStart}
+              value={closeDateStart}
               onChange={(e) => {
-                setBid1DateStart(e.target.value);
+                setCloseDateStart(e.target.value);
                 validateDates();
               }}
             />
             <input
               type="date"
               placeholder="End date"
-              value={bid1DateEnd}
+              value={closeDateEnd}
               onChange={(e) => {
-                setBid1DateEnd(e.target.value);
+                setCloseDateEnd(e.target.value);
                 validateDates();
               }}
             />
@@ -137,6 +137,8 @@ const AuctionList = () => {
               <option value="bid1_date-asc">Date (Oldest First)</option>
               <option value="bid1_amount-desc">Price (Highest First)</option>
               <option value="bid1_amount-asc">Price (Lowest First)</option>
+              <option value="total_bids-desc">Total Bids (Highest First)</option>
+              <option value="total_bids-asc">Total Bids (Lowest First)</option>
             </select>
           </div>
         </div>
@@ -153,12 +155,12 @@ const AuctionList = () => {
                 <tr>
                   <th>Domain Name</th>
                   <th>Version</th>
+                  <th>Total Bids</th>
                   <th>Bid 1 Amount</th>
                   <th>Bid 1 User</th>
-                  <th>Bid 1 Date</th>
                   <th>Bid 2 Amount</th>
                   <th>Bid 2 User</th>
-                  <th>Bid 2 Date</th>
+                  <th>Close Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,6 +177,7 @@ const AuctionList = () => {
                       </a>
                     </td>
                     <td>{auction.domain_version}</td>
+                    <td>{auction.total_bids}</td>
                     <td>{auction.bid1_amount}</td>
                     <td
                       onClick={() => handleUserClick(auction.bid1_user)}
@@ -182,7 +185,6 @@ const AuctionList = () => {
                     >
                       {auction.bid1_user}
                     </td>
-                    <td>{new Date(auction.bid1_date).toLocaleString()}</td>
                     <td>{auction.bid2_amount}</td>
                     <td
                       onClick={() => handleUserClick(auction.bid2_user)}
@@ -190,7 +192,7 @@ const AuctionList = () => {
                     >
                       {auction.bid2_user}
                     </td>
-                    <td>{new Date(auction.bid2_date).toLocaleString()}</td>
+                    <td>{new Date(auction.close_date).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

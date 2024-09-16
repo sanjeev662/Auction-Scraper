@@ -2,10 +2,13 @@ const db = require('../config/database');
 
 const saveAuctions = async (auctions) => {
   const query = `
-    INSERT INTO auctions (domain_id, domain_name, domain_version, bid1_amount, bid1_user, bid1_date, bid2_amount, bid2_user, bid2_date)
+    INSERT INTO auctions (domain_id, domain_name, domain_version, total_bids, domain_price, close_date, bid1_amount, bid1_user, bid1_date, bid2_amount, bid2_user, bid2_date)
     VALUES ?
     ON DUPLICATE KEY UPDATE
     domain_version = VALUES(domain_version),
+    total_bids = VALUES(total_bids),
+    domain_price = VALUES(domain_price),
+    close_date = VALUES(close_date),
     bid1_amount = VALUES(bid1_amount),
     bid1_user = VALUES(bid1_user),
     bid1_date = VALUES(bid1_date),
@@ -18,6 +21,9 @@ const saveAuctions = async (auctions) => {
     auction.domain_id,
     auction.domain_name,
     auction.domain_version,
+    auction.total_bids,
+    parseFloat(auction.domain_price.replace(/[^0-9.]/g, '')) || null,
+    auction.close_date,
     parseFloat(auction.top_bids[0]?.amount.replace(/[^0-9.]/g, '')) || null,
     auction.top_bids[0]?.user || null,
     auction.top_bids[0]?.date || null,
@@ -34,7 +40,7 @@ const saveAuctions = async (auctions) => {
   }
 };
 
-const getAuctions = async (page, limit, sortBy, sortOrder, search, bid1DateStart, bid1DateEnd, userSearch) => {
+const getAuctions = async (page, limit, sortBy, sortOrder, search, closeDateStart, closeDateEnd, userSearch) => {
   let query = 'SELECT * FROM auctions WHERE 1=1';
   const params = [];
 
@@ -43,9 +49,9 @@ const getAuctions = async (page, limit, sortBy, sortOrder, search, bid1DateStart
     params.push(`%${search}%`);
   }
 
-  if (bid1DateStart && bid1DateEnd) {
-    query += ' AND bid1_date BETWEEN ? AND ?';
-    params.push(bid1DateStart, bid1DateEnd);
+  if (closeDateStart && closeDateEnd) {
+    query += ' AND close_date BETWEEN ? AND ?';
+    params.push(closeDateStart, closeDateEnd);
   }
 
   if (userSearch) {
