@@ -19,10 +19,18 @@ app.use(session({
 const scrapeAuctions = async (startPage, endPage, username, password, sortBy, sortDirection, sendData) => {
   console.log(`Starting scrape for pages ${startPage} to ${endPage}`);
   const errors = [];
+  let browser;
 
   try {
+    console.log('Launching browser');
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      timeout: 60000
+    });
+    
     // Attempt to login once before starting the scraping process
-    await navigateToBidsPage(`${baseUrl}/bids/index/1`, username, password);
+    await navigateToBidsPage(`${baseUrl}/bids/index/1`, username, password, browser);
 
     for (let page = startPage; page <= endPage; page++) {
       console.log(`Scraping page ${page}`);
@@ -44,7 +52,7 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
           const totalBids = parseInt(domainElement.closest('tr').find('td[data-label="Bids"]').text().trim(), 10) || 0;
           const closeDate = domainElement.closest('tr').find('td[data-label="Close Date"]').text().trim();
 
-          console.log(`Processing domain: ${domainName} (ID: ${domainId})`);
+          console.log(`Processing domain: ${domainName} (ID: ${domainId}) Domain No:[${i+1}/${domainLinks.length}]`);
 
           try {
             const domainExists = await auctionDao.checkDomainExists(domainId);
@@ -53,11 +61,11 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
               continue;
             }
 
-            const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password);
+            const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
             if (data) {
               console.log(`Saving data for domain: ${domainName}`);
               await auctionDao.saveAuctions([data]);
-              sendData(data);
+              //sendData(data);
             } else {
               console.log(`No data returned for auction URL: ${auctionUrl}`);
             }
@@ -65,8 +73,8 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
             console.error(`Error processing domain ${domainName}:`, error);
             errors.push(`Failed to scrape: ${auctionUrl}`);
           }
-          console.log(`Waiting 1 second before next domain`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log(`Waiting 0 second before next domain`);
+          // await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (pageError) {
         console.error(`Error scraping page ${page}:`, pageError);
@@ -75,24 +83,29 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
     }
 
     console.log(`Scraping completed. Total errors: ${errors.length}`);
-    sendData({ done: true, errors });
+    //sendData({ done: true, errors });
   } catch (error) {
     console.error('Scraping process stopped due to an error:', error);
     if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
-      sendData({ error: error.message, type: 'AUTHENTICATION_ERROR' });
+      //sendData({ error: error.message, type: 'AUTHENTICATION_ERROR' });
     } else {
-      sendData({ error: error.message, type: 'GENERAL_ERROR' });
+      //sendData({ error: error.message, type: 'GENERAL_ERROR' });
+    }
+  } finally {
+    if (browser) {
+      console.log('Closing browser');
+      await browser.close();
     }
   }
 };
 
-const getDomainData = async (domainName, domainId, totalBids, domainPrice, closeDate, username, password, retries = 3) => {
+const getDomainData = async (domainName, domainId, totalBids, domainPrice, closeDate, username, password,browser, retries = 3) => {
   console.log(`Fetching data for ${domainName}`);
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const bidsUrl = `${baseUrl}/bids/index/${domainId}`;
       console.log(`Navigating to bids page: ${bidsUrl}`);
-      const bidsPageContent = await navigateToBidsPage(bidsUrl, username, password);
+      const bidsPageContent = await navigateToBidsPage(bidsUrl, username, password, browser);
 
       console.log(`Parsing Top Bids for domain: ${domainName}`);
       const $bids = cheerio.load(bidsPageContent);
@@ -127,17 +140,9 @@ const getDomainData = async (domainName, domainId, totalBids, domainPrice, close
   }
 };
 
-const navigateToBidsPage = async (bidsUrl, username, password) => {
-  let browser;
+const navigateToBidsPage = async (bidsUrl, username, password, browser) => {
   try {
-    console.log('Launching browser');
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      timeout: 60000
-    });
     const page = await browser.newPage();
-
     // Check if we have a valid session
     if (!app.get('sessionCookie')) {
       console.log('No session cookie found. Logging in...');
@@ -181,18 +186,15 @@ const navigateToBidsPage = async (bidsUrl, username, password) => {
     await page.goto(bidsUrl, { waitUntil: 'networkidle0' });
 
     console.log('Returning page content');
-    return await page.content();
+    const content = await page.content();
+    await page.close();
+    return content;
   } catch (error) {
     console.error('Error in navigateToBidsPage:', error);
     if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
       throw error;
     }
     throw new Error(`Failed to navigate to bids page: ${error.message}`);
-  } finally {
-    if (browser) {
-      console.log('Closing browser');
-      await browser.close();
-    }
   }
 };
 
