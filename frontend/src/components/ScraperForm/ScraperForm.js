@@ -14,6 +14,7 @@ const ScraperForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [auctionData, setAuctionData] = useState([]);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,12 +22,15 @@ const ScraperForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.startPage > formData.endPage) {
+    const startPage = parseInt(formData.startPage);
+    const endPage = parseInt(formData.endPage);
+    if (startPage > endPage) {
       setError('Start page must be less than or equal to end page');
       return;
     }
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
     setAuctionData([]);
 
     const onDataReceived = (data) => {
@@ -46,13 +50,15 @@ const ScraperForm = () => {
       setIsLoading(false);
       if (errors && errors.length > 0) {
         setError(`Scraping completed with ${errors.length} errors.`);
+      } else {
+        setSuccessMessage(auctionData.length === 0 ? 'Scraping completed successfully. No data found.' : 'Scraping completed successfully!');
       }
     };
 
     try {
-      scrapeAuctions(
-        formData.startPage,
-        formData.endPage,
+      await scrapeAuctions(
+        startPage,
+        endPage,
         formData.username,
         formData.password,
         formData.sortBy,
@@ -69,7 +75,15 @@ const ScraperForm = () => {
 
   return (
     <div className="scraper-container">
-      <h1>Auction Scraper Form</h1>
+      <h1>Auction Scraper</h1>
+      {error && (
+        <div className="error-banner">
+          <p>{error}</p>
+          <button onClick={() => setError(null)} className="error-close-btn">
+            &times;
+          </button>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="scraper-form">
         <div className="form-row">
           <div className="form-group">
@@ -154,11 +168,12 @@ const ScraperForm = () => {
         </button>
       </form>
       {isLoading && (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Scraping in progress...</p>
         </div>
       )}
-      {error && <div className="error">{error}</div>}
+      {successMessage && <div className="success-message">{successMessage}</div>}
       {auctionData.length > 0 && (
         <div className="scraping-results">
           <h2>Scraping Results</h2>
