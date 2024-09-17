@@ -8,7 +8,7 @@ const Navbar = () => {
       <div className="navbar-container">
         <div className="navbar-brand">
           <img src={'./namekart-logo.png'} alt="Namekart Logo" className="navbar-logo" />
-          Auction Scraper
+          AI Auction
         </div>
         <ul className="navbar-menu">
           <li>

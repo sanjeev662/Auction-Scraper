@@ -1,5 +1,5 @@
 .auction-list {
-  margin-top: 20px;
+  margin-top: 80px !important;
 }
 
 /* Filters */
@@ -127,9 +127,9 @@ tr:nth-child(even) {
 
 /* User link */
 .user-link {
-  color: #007bff;
+  color: #004b91;;
   cursor: pointer;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* Loading spinner */

@@ -12,8 +12,8 @@ const AuctionList = () => {
   const [sortBy, setSortBy] = useState('bid1_date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [search, setSearch] = useState('');
-  const [bid1DateStart, setBid1DateStart] = useState('');
-  const [bid1DateEnd, setBid1DateEnd] = useState('');
+  const [closeDateStart, setCloseDateStart] = useState('');
+  const [closeDateEnd, setCloseDateEnd] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [pageSize, setPageSize] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,8 +28,8 @@ const AuctionList = () => {
         sortBy,
         sortOrder,
         search,
-        bid1DateStart,
-        bid1DateEnd,
+        closeDateStart,
+        closeDateEnd,
         userSearch
       });
       setAuctions(response.auctions);
@@ -40,7 +40,7 @@ const AuctionList = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, sortBy, sortOrder, search, bid1DateStart, bid1DateEnd, userSearch]);
+  }, [page, pageSize, sortBy, sortOrder, search, closeDateStart, closeDateEnd, userSearch]);
 
   useEffect(() => {
     fetchAuctions();
@@ -58,8 +58,8 @@ const AuctionList = () => {
 
   const resetFilters = () => {
     setSearch('');
-    setBid1DateStart('');
-    setBid1DateEnd('');
+    setCloseDateStart('');
+    setCloseDateEnd('');
     setUserSearch('');
     setPageSize(20);
     setSortBy('bid1_date');
@@ -68,9 +68,9 @@ const AuctionList = () => {
   };
 
   const validateDates = () => {
-    if (bid1DateStart && bid1DateEnd && new Date(bid1DateStart) > new Date(bid1DateEnd)) {
+    if (closeDateStart && closeDateEnd && new Date(closeDateStart) > new Date(closeDateEnd)) {
       alert('Start date cannot be later than end date');
-      setBid1DateEnd('');
+      setCloseDateEnd('');
     }
   };
 
@@ -95,24 +95,26 @@ const AuctionList = () => {
             <input
               type="date"
               placeholder="Start date"
-              value={bid1DateStart}
+              value={closeDateStart}
               onChange={(e) => {
-                setBid1DateStart(e.target.value);
+                setCloseDateStart(e.target.value);
                 validateDates();
               }}
             />
             <input
               type="date"
               placeholder="End date"
-              value={bid1DateEnd}
+              value={closeDateEnd}
               onChange={(e) => {
-                setBid1DateEnd(e.target.value);
+                setCloseDateEnd(e.target.value);
                 validateDates();
               }}
             />
           </div>
           <div className="action-buttons">
-            <button onClick={resetFilters} className="reset-button">Reset Filters</button>
+            <button onClick={resetFilters} className="reset-button">
+              Reset Filters
+            </button>
             <div className="export-buttons">
               <ExportButton auctionData={auctions} format="xlsx" />
               <ExportButton auctionData={auctions} format="csv" />
@@ -121,7 +123,10 @@ const AuctionList = () => {
         </div>
         <div className="filters-row">
           <div className="sort-filters">
-            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
               <option value={10}>10 per page</option>
               <option value={20}>20 per page</option>
               <option value={50}>50 per page</option>
@@ -132,6 +137,8 @@ const AuctionList = () => {
               <option value="bid1_date-asc">Date (Oldest First)</option>
               <option value="bid1_amount-desc">Price (Highest First)</option>
               <option value="bid1_amount-asc">Price (Lowest First)</option>
+              <option value="total_bids-desc">Total Bids (Highest First)</option>
+              <option value="total_bids-asc">Total Bids (Lowest First)</option>
             </select>
           </div>
         </div>
@@ -147,34 +154,64 @@ const AuctionList = () => {
               <thead>
                 <tr>
                   <th>Domain Name</th>
+                  <th>Version</th>
+                  <th>Total Bids</th>
                   <th>Bid 1 Amount</th>
                   <th>Bid 1 User</th>
-                  <th>Bid 1 Date</th>
                   <th>Bid 2 Amount</th>
                   <th>Bid 2 User</th>
-                  <th>Bid 2 Date</th>
+                  <th>Close Date</th>
                 </tr>
               </thead>
               <tbody>
                 {auctions.map((auction) => (
                   <tr key={auction.id}>
-                    <td>{auction.domain_name}</td>
+                    <td>
+                      {" "}
+                      <a
+                        href={`https://auction.whois.ai/auctions/view/${auction.domain_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {auction.domain_name}
+                      </a>
+                    </td>
+                    <td>{auction.domain_version}</td>
+                    <td>{auction.total_bids}</td>
                     <td>{auction.bid1_amount}</td>
-                    <td onClick={() => handleUserClick(auction.bid1_user)} className="user-link">{auction.bid1_user}</td>
-                    <td>{new Date(auction.bid1_date).toLocaleString()}</td>
+                    <td
+                      onClick={() => handleUserClick(auction.bid1_user)}
+                      className="user-link"
+                    >
+                      {auction.bid1_user}
+                    </td>
                     <td>{auction.bid2_amount}</td>
-                    <td onClick={() => handleUserClick(auction.bid2_user)} className="user-link">{auction.bid2_user}</td>
-                    <td>{new Date(auction.bid2_date).toLocaleString()}</td>
+                    <td
+                      onClick={() => handleUserClick(auction.bid2_user)}
+                      className="user-link"
+                    >
+                      {auction.bid2_user}
+                    </td>
+                    <td>{new Date(auction.close_date).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-            <div className="page-navigation">
-              <button onClick={() => setPage(page - 1)} disabled={page === 1}>Previous</button>
-              <span>Rows[{totalItems}] Page {page} of {totalPages}</span>
-              <button onClick={() => setPage(page + 1)} disabled={page === totalPages}>Next</button>
-            </div>
+          <div className="page-navigation">
+            <button onClick={() => setPage(page - 1)} disabled={page === 1}>
+              Previous
+            </button>
+            <span>
+              Rows[{totalItems}] Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </>
       )}
     </div>
