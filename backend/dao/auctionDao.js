@@ -41,40 +41,44 @@ const saveAuctions = async (auctions) => {
 };
 
 const getAuctions = async (page, limit, sortBy, sortOrder, search, closeDateStart, closeDateEnd, userSearch) => {
-  let query = 'SELECT * FROM auctions WHERE 1=1';
+  let baseQuery = 'FROM auctions WHERE 1=1';
   const params = [];
 
   if (search) {
-    query += ' AND domain_name LIKE ?';
+    baseQuery += ' AND domain_name LIKE ?';
     params.push(`%${search}%`);
   }
 
   if (closeDateStart && closeDateEnd) {
-    query += ' AND close_date BETWEEN ? AND ?';
+    baseQuery += ' AND close_date BETWEEN ? AND ?';
     params.push(closeDateStart, closeDateEnd);
   }
 
   if (userSearch) {
-    query += ' AND (bid1_user LIKE ? OR bid2_user LIKE ?)';
+    baseQuery += ' AND (bid1_user LIKE ? OR bid2_user LIKE ?)';
     params.push(`%${userSearch}%`, `%${userSearch}%`);
   }
 
-  query += ` ORDER BY ${sortBy} ${sortOrder}`;
-  query += ' LIMIT ? OFFSET ?';
+  const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+  const dataQuery = `SELECT * ${baseQuery} ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
   params.push(parseInt(limit), (page - 1) * limit);
 
-  const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
-  const [countResult] = await db.query(countQuery, params);
-  const totalItems = countResult[0].total;
+  try {
+    const [countResult] = await db.query(countQuery, params.slice(0, -2));
+    const totalItems = countResult[0]?.total || 0;
 
-  const [results] = await db.query(query, params);
+    const [results] = await db.query(dataQuery, params);
 
-  return {
-    auctions: results,
-    totalItems,
-    totalPages: Math.ceil(totalItems / limit),
-    currentPage: parseInt(page)
-  };
+    return {
+      auctions: results,
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: parseInt(page)
+    };
+  } catch (error) {
+    console.error('Error executing getAuctions query:', error);
+    throw error;
+  }
 };
 
 const getUserBidStats = async (username) => {
