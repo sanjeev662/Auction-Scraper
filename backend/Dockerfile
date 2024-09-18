@@ -2,13 +2,13 @@
 FROM node:21.7.3-alpine
 
 # Set the working directory in the container
-WORKDIR /server
+WORKDIR /build
 
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install && npm cache clean --force
 
 # Copy the rest of the application code to the working directory
 COPY . .
