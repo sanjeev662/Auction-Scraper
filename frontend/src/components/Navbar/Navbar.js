@@ -8,12 +8,17 @@ const Navbar = () => {
       <div className="navbar-container">
         <div className="navbar-brand">
           <img src={'./namekart-logo.png'} alt="Namekart Logo" className="navbar-logo" />
-          AI Auction
+          Auction AI
         </div>
         <ul className="navbar-menu">
           <li>
             <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''}>
               Auction List
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/auction-bidders" className={({ isActive }) => isActive ? 'active' : ''}>
+                Bidder List
             </NavLink>
           </li>
           <li>

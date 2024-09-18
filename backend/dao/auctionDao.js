@@ -82,25 +82,38 @@ const getAuctions = async (page, limit, sortBy, sortOrder, search, closeDateStar
 };
 
 const getUserBidStats = async (username) => {
-  const query = `
+  const summaryQuery = `
     SELECT 
-      COUNT(CASE WHEN bid1_user = ? THEN 1 END) as first_place_bids,
-      COUNT(CASE WHEN bid2_user = ? THEN 1 END) as second_place_bids,
-      JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'domain_name', domain_name,
-          'bid_amount', CASE WHEN bid1_user = ? THEN bid1_amount ELSE bid2_amount END,
-          'bid_date', CASE WHEN bid1_user = ? THEN bid1_date ELSE bid2_date END,
-          'position', CASE WHEN bid1_user = ? THEN 1 ELSE 2 END
-        )
-      ) as bid_details
-    FROM auctions
-    WHERE bid1_user = ? OR bid2_user = ?
+      SUM(CASE WHEN a.bid1_user = ? THEN 1 ELSE 0 END) as first_place_bids,
+      SUM(CASE WHEN a.bid2_user = ? THEN 1 ELSE 0 END) as second_place_bids
+    FROM auctions a
+    WHERE a.bid1_user = ? OR a.bid2_user = ?
+  `;
+
+  const detailsQuery = `
+    SELECT 
+      a.domain_name,
+      CASE WHEN a.bid1_user = ? THEN a.bid1_amount ELSE a.bid2_amount END as bid_amount,
+      CASE WHEN a.bid1_user = ? THEN a.bid1_date ELSE a.bid2_date END as bid_date,
+      CASE WHEN a.bid1_user = ? THEN 1 ELSE 2 END as position
+    FROM auctions a
+    WHERE a.bid1_user = ? OR a.bid2_user = ?
+    ORDER BY CASE WHEN a.bid1_user = ? THEN a.bid1_date ELSE a.bid2_date END DESC
   `;
 
   try {
-    const [results] = await db.query(query, [username, username, username, username, username, username, username]);
-    return results[0];
+    const [summaryResults] = await db.query(summaryQuery, [username, username, username, username]);
+    const [detailsResults] = await db.query(detailsQuery, [username, username, username, username, username, username]);
+
+    const stats = summaryResults[0];
+    stats.bid_details = detailsResults.map(detail => ({
+      domain_name: detail.domain_name,
+      bid_amount: parseFloat(detail.bid_amount),
+      bid_date: detail.bid_date,
+      position: parseInt(detail.position)
+    }));
+
+    return stats;
   } catch (error) {
     console.error('Error getting user bid stats:', error);
     throw error;

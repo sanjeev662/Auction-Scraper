@@ -144,8 +144,8 @@ const AuctionList = () => {
         </div>
       </div>
       {isLoading ? (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+        <div className="auction-list-loading-spinner">
+          <div className="auction-list-spinner"></div>
         </div>
       ) : (
         <>

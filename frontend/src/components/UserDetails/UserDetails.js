@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { getUserBidStats } from '../../services/scraperService';
 import './UserDetails.css';
 
 const UserDetails = () => {
   const { username } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [userStats, setUserStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,6 +19,7 @@ const UserDetails = () => {
   const [search, setSearch] = useState('');
   const [bidDateStart, setBidDateStart] = useState('');
   const [bidDateEnd, setBidDateEnd] = useState('');
+  const [positionFilter, setPositionFilter] = useState(location.state?.fromBiddersList ? '1' : 'all');
 
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -42,7 +45,8 @@ const UserDetails = () => {
       const matchesSearch = bid.domain_name.toLowerCase().includes(search.toLowerCase());
       const matchesDateRange = (!bidDateStart || new Date(bid.bid_date) >= new Date(bidDateStart)) &&
                                (!bidDateEnd || new Date(bid.bid_date) <= new Date(bidDateEnd));
-      return matchesSearch && matchesDateRange;
+      const matchesPosition = positionFilter === 'all' || bid.position.toString() === positionFilter;
+      return matchesSearch && matchesDateRange && matchesPosition;
     });
 
     filtered.sort((a, b) => {
@@ -55,7 +59,7 @@ const UserDetails = () => {
     });
 
     return filtered;
-  }, [userStats, search, bidDateStart, bidDateEnd, sortBy, sortOrder]);
+  }, [userStats, search, bidDateStart, bidDateEnd, sortBy, sortOrder, positionFilter]);
 
   const paginatedBids = useMemo(() => {
     const startIndex = (page - 1) * pageSize;
@@ -70,6 +74,10 @@ const UserDetails = () => {
     setSortOrder(newSortOrder);
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   const resetFilters = () => {
     setSearch('');
     setBidDateStart('');
@@ -78,6 +86,7 @@ const UserDetails = () => {
     setSortBy('bid_date');
     setSortOrder('desc');
     setPage(1);
+    setPositionFilter('all');
   };
 
   const validateDates = () => {
@@ -93,7 +102,12 @@ const UserDetails = () => {
 
   return (
     <div className="user-details">
-      <h2>User Name: {username}</h2>
+      <div className='user-heading'>
+        <button className="back-button" onClick={handleBack}>
+          ← Back
+        </button>
+        <h2 className="user-name">Bidder Name: {username}</h2>
+      </div>
       <div className='user-stats'>
       <p>Number of First Place Bids: {userStats.first_place_bids}</p>
       <p>Number of Second Place Bids: {userStats.second_place_bids}</p>
@@ -126,6 +140,14 @@ const UserDetails = () => {
                 validateDates();
               }}
             />
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+            >
+              <option value="all">All Positions</option>
+              <option value="1">First Place</option>
+              <option value="2">Second Place</option>
+            </select>
           </div>
           <div className="action-buttons">
             <button onClick={resetFilters} className="reset-button">Reset Filters</button>
