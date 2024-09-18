@@ -4,6 +4,7 @@ import Navbar from './components/Navbar/Navbar';
 import AuctionList from './components/AuctionList/AuctionList';
 import ScraperForm from './components/ScraperForm/ScraperForm';
 import UserDetails from './components/UserDetails/UserDetails';
+import AuctionBiddersList from './components/AuctionBiddersList/AuctionBiddersList';
 import './App.css';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<AuctionList />} />
             <Route path="/scrape" element={<ScraperForm />} />
             <Route path="/user/:username" element={<UserDetails />} />
+            <Route path="/auction-bidders" element={<AuctionBiddersList />} />
           </Routes>
         </main>
       </div>

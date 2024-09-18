@@ -17,6 +17,11 @@ const Navbar = () => {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/auction-bidders" className={({ isActive }) => isActive ? 'active' : ''}>
+                Bidder List
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/scrape" className={({ isActive }) => isActive ? 'active' : ''}>
               Scrape Auction
             </NavLink>

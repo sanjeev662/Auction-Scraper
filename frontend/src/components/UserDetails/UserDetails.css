@@ -3,6 +3,7 @@
     margin: 0 auto;
     padding: 80px 20px 20px; 
     font-family: Arial, sans-serif;
+    position: relative;
   }
 
   .user-stats {
@@ -80,3 +81,41 @@
       padding: 8px;
     }
   }
+
+.back-button {
+  position: absolute;
+  left: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #007bff;
+  padding: 0;
+}
+
+.back-button::before {
+  content: '←';
+  margin-right: 5px;
+}
+
+.user-details-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.user-details-header h2 {
+  margin: 0;
+}
+
+.user-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.user-name {
+  text-align: center;
+}

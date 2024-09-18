@@ -168,8 +168,8 @@ const ScraperForm = () => {
         </button>
       </form>
       {isLoading && (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
+        <div className="scraper-form-loading-container">
+          <div className="scraper-form-loading-spinner"></div>
           <p>Scraping in progress...</p>
         </div>
       )}
