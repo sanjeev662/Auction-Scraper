@@ -1,8 +1,15 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
-const Navbar = () => {
+const Navbar = ({ token, setToken }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    setToken(null);
+    navigate('/login');
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -18,7 +25,7 @@ const Navbar = () => {
           </li>
           <li>
             <NavLink to="/auction-bidders" className={({ isActive }) => isActive ? 'active' : ''}>
-                Bidder List
+              Bidder List
             </NavLink>
           </li>
           <li>
@@ -26,6 +33,20 @@ const Navbar = () => {
               Scrape Auction
             </NavLink>
           </li>
+          {token ? (
+            <li>
+            <NavLink to="#" onClick={handleLogout}>
+              <img src={'./logout.png'} alt="Logout Icon" className="navbar-icon" />
+              Logout
+            </NavLink>
+          </li>
+          ) : (
+            <li>
+              <NavLink to="/login" className={({ isActive }) => isActive ? 'active' : ''}>
+                Login
+              </NavLink>
+            </li>
+          )}
         </ul>
       </div>
     </nav>
