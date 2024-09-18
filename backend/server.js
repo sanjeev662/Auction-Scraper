@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const scraperRoutes = require('./routes/scraperRoutes');
 const db = require('./config/database');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/', scraperRoutes);
+app.use('/auth', authRoutes);
 
 const PORT = process.env.PORT || 5001;
 

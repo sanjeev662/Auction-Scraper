@@ -13,7 +13,8 @@ const getAuctionBidders = async (req, res) => {
 const updateBidderNote = async (req, res) => {
   try {
     const { bidderId } = req.params;
-    const { updatedNote, noteUpdatedBy } = req.body;
+    const { updatedNote } = req.body;
+    const noteUpdatedBy = req.user.username;
     await auctionBidderDao.updateBidderNote(bidderId, updatedNote, noteUpdatedBy);
     res.json({ message: 'Note updated successfully' });
   } catch (error) {
