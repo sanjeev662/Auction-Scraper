@@ -6,7 +6,7 @@ const login = async (username, password) => {
   if (!user) {
     throw new Error('Invalid credentials');
   }
-  return jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 const verifyToken = (token) => {
