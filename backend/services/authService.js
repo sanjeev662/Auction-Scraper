@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const users = require('../dao/usersDao');
+const { users, addUser } = require('../dao/usersDao');
 
 const login = async (username, password) => {
   const user = users.find(u => u.username === username && u.password === password);
@@ -13,7 +13,13 @@ const verifyToken = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET);
 };
 
+const register = async (username, password) => {
+  addUser(username, password);
+  return { message: 'User registered successfully' };
+};
+
 module.exports = {
   login,
-  verifyToken
+  verifyToken,
+  register
 };
