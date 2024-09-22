@@ -16,13 +16,34 @@ const ScraperForm = () => {
   const [auctionData, setAuctionData] = useState([]);
   const [successMessage, setSuccessMessage] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [formErrors, setFormErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error for the field being changed
+    setFormErrors({ ...formErrors, [e.target.name]: '' });
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.startPage) errors.startPage = 'Start Page is required';
+    if (!formData.endPage) errors.endPage = 'End Page is required';
+    if (parseInt(formData.startPage) > parseInt(formData.endPage)) {
+      errors.endPage = 'End Page must be greater than or equal to Start Page';
+    }
+    if (!formData.username.trim()) errors.username = 'Username is required';
+    if (!formData.password.trim()) errors.password = 'Password is required';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e, actionType) => {
     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
+    
     const startPage = parseInt(formData.startPage);
     const endPage = parseInt(formData.endPage);
     if (startPage > endPage) {
@@ -85,7 +106,7 @@ const ScraperForm = () => {
           </button>
         </div>
       )}
-      <form className="scraper-form">
+      <form className="scraper-form" onSubmit={(e) => e.preventDefault()}>
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="startPage">Start Page:</label>
@@ -98,6 +119,7 @@ const ScraperForm = () => {
               min="1"
               required
             />
+            {formErrors.startPage && <span className="error-message">{formErrors.startPage}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="endPage">End Page:</label>
@@ -110,6 +132,7 @@ const ScraperForm = () => {
               min="1"
               required
             />
+            {formErrors.endPage && <span className="error-message">{formErrors.endPage}</span>}
           </div>
         </div>
         <div className="form-row">
@@ -142,7 +165,7 @@ const ScraperForm = () => {
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="username">Username:</label>
+            <label htmlFor="username">Username(whois):</label>
             <input
               id="username"
               name="username"
@@ -151,9 +174,10 @@ const ScraperForm = () => {
               onChange={handleChange}
               required
             />
+            {formErrors.username && <span className="error-message">{formErrors.username}</span>}
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">Password(whois):</label>
             <input
               id="password"
               name="password"
@@ -162,6 +186,7 @@ const ScraperForm = () => {
               onChange={handleChange}
               required
             />
+            {formErrors.password && <span className="error-message">{formErrors.password}</span>}
           </div>
         </div>
         <div className="form-row">
