@@ -16,7 +16,7 @@ app.use(session({
   cookie: { secure: true } // Set to true if using HTTPS
 }));
 
-const scrapeAuctions = async (startPage, endPage, username, password, sortBy, sortDirection, sendData) => {
+const scrapeAuctions = async (startPage, endPage, username, password, sortBy, sortDirection, actionType, sendData) => {
   console.log(`Starting scrape for pages ${startPage} to ${endPage}`);
   const errors = [];
   let browser;
@@ -62,19 +62,24 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
           console.log(`Processing domain: ${domainName} (ID: ${domainId}) Domain No:[${i+1}/${domainLinks.length}]`);
 
           try {
-            const domainExists = await auctionDao.checkDomainExists(domainId);
-            if (domainExists) {
-              console.log(`Domain ${domainName} (ID: ${domainId}) already exists in the database. Skipping.`);
-              continue;
-            }
+            if (actionType === 'saveAndView') {
+              const domainExists = await auctionDao.checkDomainExists(domainId);
+              if (domainExists) {
+                console.log(`Domain ${domainName} (ID: ${domainId}) already exists in the database. Skipping.`);
+                continue;
+              }
 
-            const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
-            if (data) {
-              console.log(`Saving data for domain: ${domainName}`);
-              await auctionDao.saveAuctions([data]);
-              sendData(data);
+              const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
+              if (data) {
+                console.log(`Saving data for domain: ${domainName}`);
+                await auctionDao.saveAuctions([data]);
+                sendData(data);
+              } else {
+                console.log(`No data returned for auction URL: ${auctionUrl}`);
+              }
             } else {
-              console.log(`No data returned for auction URL: ${auctionUrl}`);
+              const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
+              sendData(data);
             }
           } catch (error) {
             console.error(`Error processing domain ${domainName}:`, error);
@@ -103,6 +108,7 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
       console.log('Closing browser');
       await browser.close();
     }
+    app.set('sessionCookie', null);
   }
 };
 
