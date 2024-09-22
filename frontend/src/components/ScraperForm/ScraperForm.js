@@ -15,6 +15,7 @@ const ScraperForm = () => {
   const [error, setError] = useState(null);
   const [auctionData, setAuctionData] = useState([]);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [progress, setProgress] = useState(0);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,34 +33,45 @@ const ScraperForm = () => {
     setError(null);
     setSuccessMessage(null);
     setAuctionData([]);
+    setProgress(0);
 
-    try {
-      const data = await scrapeAuctions(
-        startPage,
-        endPage,
-        formData.username,
-        formData.password,
-        formData.sortBy,
-        formData.sortDirection,
-        actionType
-      );
-      console.log("donedddd",data);
+    const eventSource = scrapeAuctions(
+      startPage,
+      endPage,
+      formData.username,
+      formData.password,
+      formData.sortBy,
+      formData.sortDirection,
+      actionType
+    );
 
-      const errors = data.filter(item => item.error);
-      const validData = data.filter(item => !item.error && !item.done);
-
-      setAuctionData(validData);
-      setIsLoading(false);
-
-      if (errors.length > 0) {
-        setError(`Scraping completed with ${errors.length} errors.`);
-      } else {
-        setSuccessMessage(validData.length === 0 ? 'Scraping completed successfully. No data found.' : 'Scraping completed successfully!');
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'progress') {
+        setProgress(data.value);
+      } else if (data.type === 'auction') {
+        setAuctionData((prevData) => [...prevData, data.auction]);
+      } else if (data.type === 'scraping_complete') {
+        setIsLoading(false);
+        if (auctionData.length === 0) {
+          setSuccessMessage('Scraping completed successfully, but no data was found.');
+        } else {
+          setSuccessMessage(data.message);
+        }
+        eventSource.close();
       }
-    } catch (error) {
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource failed:', error);
+      setError('An error occurred while scraping. Please try again.');
       setIsLoading(false);
-      setError(error.message);
-    }
+      eventSource.close();
+    };
+
+    eventSource.onopen = () => {
+      console.log('EventSource connection opened');
+    };
   };
 
   return (
@@ -164,7 +176,7 @@ const ScraperForm = () => {
       {isLoading && (
         <div className="scraper-form-loading-container">
           <div className="scraper-form-loading-spinner"></div>
-          <p>Scraping in progress...</p>
+          <p>Scraping in progress... {progress}%</p>
         </div>
       )}
       {successMessage && <div className="success-message">{successMessage}</div>}
@@ -179,7 +191,9 @@ const ScraperForm = () => {
                 <p><strong>Price:</strong> {auction.domain_price}</p>
                 <p><strong>Bids:</strong> {auction.total_bids}</p>
                 <p><strong>Close Date:</strong> {auction.close_date}</p>
-                <p><strong>Top Bid:</strong> {auction.top_bids[0].amount} by {auction.top_bids[0].user}</p>
+                {auction.top_bids && auction.top_bids.length > 0 && (
+                  <p><strong>Top Bid:</strong> {auction.top_bids[0].amount} by {auction.top_bids[0].user}</p>
+                )}
               </div>
             ))}
           </div>

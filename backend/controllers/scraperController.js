@@ -2,7 +2,7 @@ const scraperService = require('../services/scraperService');
 const auctionDao = require('../dao/auctionDao');
 
 const scrapeAuctions = async (req, res) => {
-  const { startPage, endPage, username, password, sortBy, sortDirection, actionType} = req.body;
+  const { startPage, endPage, username, password, sortBy, sortDirection, actionType } = req.query;
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -10,16 +10,15 @@ const scrapeAuctions = async (req, res) => {
     'Connection': 'keep-alive'
   });
 
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
-    await scraperService.scrapeAuctions(startPage, endPage, username, password, sortBy, sortDirection, actionType, (data) => {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    });
+    await scraperService.scrapeAuctions(startPage, endPage, username, password, sortBy, sortDirection, actionType, sendEvent);
+    sendEvent({ type: 'scraping_complete', message: 'Scraping completed successfully!' });
   } catch (error) {
-    if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
-      res.status(404).write(`data: ${JSON.stringify({ error: error.message, type: 'AUTHENTICATION_ERROR' })}\n\n`);
-    } else {
-      res.status(500).write(`data: ${JSON.stringify({ error: error.message, type: 'GENERAL_ERROR' })}\n\n`);
-    }
+    sendEvent({ type: 'error', message: error.message });
   } finally {
     res.end();
   }

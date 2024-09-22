@@ -16,19 +16,14 @@ app.use(session({
   cookie: { secure: true } // Set to true if using HTTPS
 }));
 
-const scrapeAuctions = async (startPage, endPage, username, password, sortBy, sortDirection, actionType, sendData) => {
+const scrapeAuctions = async (startPage, endPage, username, password, sortBy, sortDirection, actionType, sendEvent) => {
   console.log(`Starting scrape for pages ${startPage} to ${endPage}`);
+  sendEvent.lastDataSent = false;  // Add this line
   const errors = [];
   let browser;
 
   try {
     console.log('Launching browser');
-    // browser = await puppeteer.launch({
-    //   headless: true,
-    //   args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    //   timeout: 60000
-    // });
-
     browser = await puppeteer.launch({
       headless: true,
       // executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
@@ -62,6 +57,7 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
           console.log(`Processing domain: ${domainName} (ID: ${domainId}) Domain No:[${i+1}/${domainLinks.length}]`);
 
           try {
+            let data;
             if (actionType === 'saveAndView') {
               const domainExists = await auctionDao.checkDomainExists(domainId);
               if (domainExists) {
@@ -69,22 +65,31 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
                 continue;
               }
 
-              const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
+              data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
               if (data) {
                 console.log(`Saving data for domain: ${domainName}`);
                 await auctionDao.saveAuctions([data]);
-                sendData(data);
               } else {
-                console.log(`No data returned for auction URL: ${auctionUrl}`);
+                console.log(`No data returned for domain: ${domainName}. Skipping save.`);
               }
             } else {
-              const data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
-              sendData(data);
+              data = await getDomainData(domainName, domainId, totalBids, domainPrice, closeDate, username, password, browser);
+            }
+
+            if (data) {
+              sendEvent({ type: 'auction', auction: data });
+              sendEvent.lastDataSent = true;
+            } else {
+              console.log(`No data to send for domain: ${domainName}`);
             }
           } catch (error) {
             console.error(`Error processing domain ${domainName}:`, error);
-            errors.push(`Failed to scrape: ${auctionUrl}`);
+            errors.push(`Failed to scrape: ${auctionUrl} - Error: ${error.message}`);
+            sendEvent({ type: 'error', message: `Failed to process domain: ${domainName}`, error: error.message });
           }
+          
+          sendEvent({ type: 'progress', value: Math.round((i + 1) / domainLinks.length * 100) });
+          
           console.log(`Waiting 1 second before next domain`);
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -95,14 +100,12 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
     }
 
     console.log(`Scraping completed. Total errors: ${errors.length}`);
-    sendData({ done: true, errors });
+    if (errors.length > 0) {
+      sendEvent({ type: 'errors', errors });
+    }
   } catch (error) {
     console.error('Scraping process stopped due to an error:', error);
-    if (error.message.startsWith('AUTHENTICATION_ERROR:')) {
-      sendData({ error: error.message, type: 'AUTHENTICATION_ERROR' });
-    } else {
-      sendData({ error: error.message, type: 'GENERAL_ERROR' });
-    }
+    throw error;
   } finally {
     if (browser) {
       console.log('Closing browser');
