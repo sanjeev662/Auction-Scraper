@@ -28,9 +28,18 @@ const ScraperForm = () => {
     const errors = {};
     if (!formData.startPage) errors.startPage = 'Start Page is required';
     if (!formData.endPage) errors.endPage = 'End Page is required';
-    if (parseInt(formData.startPage) > parseInt(formData.endPage)) {
+    
+    const startPage = parseInt(formData.startPage);
+    const endPage = parseInt(formData.endPage);
+    
+    if (startPage > endPage) {
       errors.endPage = 'End Page must be greater than or equal to Start Page';
     }
+
+    if (endPage - startPage + 1 > 5) {
+      errors.endPage = 'Page range should be less than or equal to 5';
+    }
+    
     if (!formData.username.trim()) errors.username = 'Username is required';
     if (!formData.password.trim()) errors.password = 'Password is required';
     

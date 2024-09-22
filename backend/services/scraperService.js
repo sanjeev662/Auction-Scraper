@@ -38,7 +38,7 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
     console.log('Launching browser');
     browser = await puppeteer.launch({
       headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+      // executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       timeout: 60000
     });
