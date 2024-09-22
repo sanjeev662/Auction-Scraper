@@ -51,4 +51,7 @@ Auction Scraper is a web application that allows users to scrape auction data, v
 3. Set up the MySQL database and configure the connection
 4. Start the backend server
 5. Start the frontend development server
-6. Access the application in your web browser<img width="1440" alt="Screenshot 2024-09-16 at 4 14 49 AM" src="https://github.com/user-attachments/assets/ddefad95-8870-4533-a707-e0085afab2db">
+6. Access the application in your web browser
+
+
+<img width="1440" alt="Screenshot 2024-09-22 at 4 19 58 PM" src="https://github.com/user-attachments/assets/b688e0a5-6c6c-490d-9a93-035065d4423f">
