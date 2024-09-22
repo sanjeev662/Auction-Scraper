@@ -18,9 +18,21 @@ app.use(session({
 
 const scrapeAuctions = async (startPage, endPage, username, password, sortBy, sortDirection, actionType, sendEvent) => {
   console.log(`Starting scrape for pages ${startPage} to ${endPage}`);
-  sendEvent.lastDataSent = false;  // Add this line
+  sendEvent.lastDataSent = false;
   const errors = [];
   let browser;
+
+  if (endPage < startPage) {
+    const errorMessage = `Invalid page range: endPage (${endPage}) must be greater than or equal to startPage (${startPage})`;
+    console.error(errorMessage);
+    sendEvent({ type: 'error', message: errorMessage });
+    throw new Error(errorMessage);
+  }
+
+  const domainsPerPage = 20;
+  const totalPages = endPage - startPage + 1;
+  const totalDomains = totalPages * domainsPerPage;
+  let processedDomains = 0;
 
   try {
     console.log('Launching browser');
@@ -88,7 +100,9 @@ const scrapeAuctions = async (startPage, endPage, username, password, sortBy, so
             sendEvent({ type: 'error', message: `Failed to process domain: ${domainName}`, error: error.message });
           }
           
-          sendEvent({ type: 'progress', value: Math.round((i + 1) / domainLinks.length * 100) });
+          processedDomains++;
+          const progress = Math.round((processedDomains / totalDomains) * 100);
+          sendEvent({ type: 'progress', value: progress });
           
           console.log(`Waiting 1 second before next domain`);
           await new Promise(resolve => setTimeout(resolve, 1000));
