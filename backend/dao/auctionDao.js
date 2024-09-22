@@ -1,40 +1,74 @@
 const db = require('../config/database');
 
 const saveAuctions = async (auctions) => {
-  const query = `
-    INSERT INTO auctions (domain_id, domain_name, domain_version, total_bids, domain_price, close_date, bid1_amount, bid1_user, bid1_date, bid2_amount, bid2_user, bid2_date)
-    VALUES ?
-    ON DUPLICATE KEY UPDATE
-    domain_version = VALUES(domain_version),
-    total_bids = VALUES(total_bids),
-    domain_price = VALUES(domain_price),
-    close_date = VALUES(close_date),
-    bid1_amount = VALUES(bid1_amount),
-    bid1_user = VALUES(bid1_user),
-    bid1_date = VALUES(bid1_date),
-    bid2_amount = VALUES(bid2_amount),
-    bid2_user = VALUES(bid2_user),
-    bid2_date = VALUES(bid2_date)
-  `;
-
-  const values = auctions.map(auction => [
-    auction.domain_id,
-    auction.domain_name,
-    auction.domain_version,
-    auction.total_bids,
-    parseFloat(auction.domain_price.replace(/[^0-9.]/g, '')) || null,
-    auction.close_date,
-    parseFloat(auction.top_bids[0]?.amount.replace(/[^0-9.]/g, '')) || null,
-    auction.top_bids[0]?.user || null,
-    auction.top_bids[0]?.date || null,
-    parseFloat(auction.top_bids[1]?.amount.replace(/[^0-9.]/g, '')) || null,
-    auction.top_bids[1]?.user || null,
-    auction.top_bids[1]?.date || null
-  ]);
-
   try {
-    await db.query(query, [values]);
+    await db.query('START TRANSACTION');
+
+    // Insert into auctions table
+    const auctionQuery = `
+      INSERT INTO auctions (domain_id, domain_name, domain_version, total_bids, domain_price, close_date, bid1_amount, bid1_user, bid1_date, bid2_amount, bid2_user, bid2_date)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+      domain_version = VALUES(domain_version),
+      total_bids = VALUES(total_bids),
+      domain_price = VALUES(domain_price),
+      close_date = VALUES(close_date),
+      bid1_amount = VALUES(bid1_amount),
+      bid1_user = VALUES(bid1_user),
+      bid1_date = VALUES(bid1_date),
+      bid2_amount = VALUES(bid2_amount),
+      bid2_user = VALUES(bid2_user),
+      bid2_date = VALUES(bid2_date)
+    `;
+
+    const auctionValues = auctions.map(auction => [
+      auction.domain_id,
+      auction.domain_name,
+      auction.domain_version,
+      auction.total_bids,
+      parseFloat(auction.domain_price.replace(/[^0-9.]/g, '')) || null,
+      auction.close_date,
+      parseFloat(auction.top_bids[0]?.amount.replace(/[^0-9.]/g, '')) || null,
+      auction.top_bids[0]?.user || null,
+      auction.top_bids[0]?.date || null,
+      parseFloat(auction.top_bids[1]?.amount.replace(/[^0-9.]/g, '')) || null,
+      auction.top_bids[1]?.user || null,
+      auction.top_bids[1]?.date || null
+    ]);
+
+    await db.query(auctionQuery, [auctionValues]);
+
+    // Insert or update auction_bidders
+    for (const auction of auctions) {
+      const bidders = [auction.top_bids[0]?.user, auction.top_bids[1]?.user].filter(Boolean);
+      
+      for (const bidder of bidders) {
+        const bidderQuery = `
+          INSERT INTO auction_bidders (bidder_name)
+          VALUES (?)
+          ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)
+        `;
+        await db.query(bidderQuery, [bidder]);
+        
+        const [bidderResult] = await db.query('SELECT LAST_INSERT_ID() as id');
+        const bidderId = bidderResult[0].id;
+
+        // Get auction id
+        const [auctionResult] = await db.query('SELECT id FROM auctions WHERE domain_id = ?', [auction.domain_id]);
+        const auctionId = auctionResult[0].id;
+
+        // Insert into auction_bidder_auctions
+        const relationQuery = `
+          INSERT IGNORE INTO auction_bidder_auctions (auction_bidder_id, auction_id)
+          VALUES (?, ?)
+        `;
+        await db.query(relationQuery, [bidderId, auctionId]);
+      }
+    }
+
+    await db.query('COMMIT');
   } catch (error) {
+    await db.query('ROLLBACK');
     console.error('Error saving auctions:', error);
     throw error;
   }

@@ -2,57 +2,15 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-export function scrapeAuctions(startPage, endPage, username, password, sortBy, sortDirection, onDataReceived, onError, onComplete) {
-  const source = axios.CancelToken.source();
+export function scrapeAuctions(startPage, endPage, username, password, sortBy, sortDirection, actionType) {
   const token = localStorage.getItem('token');
+  const eventSource = new EventSource(`${API_URL}/scrape?startPage=${startPage}&endPage=${endPage}&username=${username}&password=${password}&sortBy=${sortBy}&sortDirection=${sortDirection}&actionType=${actionType}`, {
+    // headers: {
+    //   'Authorization': `Bearer ${token}`
+    // }
+  });
 
-  axios.post(`${API_URL}/scrape`, 
-    { startPage, endPage, username, password, sortBy, sortDirection },
-    {
-      cancelToken: source.token,
-      responseType: 'text',
-      headers: {
-        'Accept': 'text/event-stream',
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    .then(response => {
-      const lines = response.data.split('\n');
-      lines.forEach(line => {
-        if (line.trim().startsWith('data:')) {
-          const jsonData = line.trim().substring(5);
-          try {
-            const data = JSON.parse(jsonData);
-            if (data.error) {
-              onError(data.error);
-              if (data.type === 'AUTHENTICATION_ERROR') {
-                throw new Error('Authentication failed');
-              }
-            } else if (data.done) {
-              onComplete(data.errors);
-            } else {
-              onDataReceived(data);
-            }
-          } catch (error) {
-            console.error('Error parsing JSON:', error);
-            onError('Error parsing server response');
-          }
-        }
-      });
-    })
-    .catch(error => {
-      if (axios.isCancel(error)) {
-        console.log('Request canceled:', error.message);
-      } else if (error.response && error.response.status === 404) {
-        onError('Authentication failed. Please check your credentials.');
-      } else {
-        onError('Request failed: ' + error.message);
-      }
-    });
-
-  return () => {
-    source.cancel('Operation canceled by the user.');
-  };
+  return eventSource;
 }
 
 export const getAuctions = async (params) => {

@@ -16,6 +16,7 @@
 .form-row {
   display: flex;
   gap: 20px;
+  justify-content: space-between;
 }
 
 .form-group {
@@ -35,6 +36,7 @@ input, select {
 }
 
 .submit-button {
+  flex: 1;
   padding: 10px;
   background-color: #007bff;
   color: white;
@@ -185,4 +187,11 @@ input, select {
   margin: 20px auto !important;
   border-radius: 4px;
   text-align: center;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: block;
 }

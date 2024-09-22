@@ -5,7 +5,7 @@ const auctionBidderController = require('../controllers/auctionBidderController'
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Existing routes
-router.post('/scrape', authMiddleware, scraperController.scrapeAuctions);
+router.get('/scrape', scraperController.scrapeAuctions);
 router.get('/auctions', authMiddleware, scraperController.getAuctions);
 router.get('/user-stats/:username', authMiddleware, scraperController.getUserBidStats);
 

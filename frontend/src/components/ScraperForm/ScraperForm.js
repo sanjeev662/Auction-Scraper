@@ -15,13 +15,35 @@ const ScraperForm = () => {
   const [error, setError] = useState(null);
   const [auctionData, setAuctionData] = useState([]);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [formErrors, setFormErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error for the field being changed
+    setFormErrors({ ...formErrors, [e.target.name]: '' });
   };
 
-  const handleSubmit = async (e) => {
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.startPage) errors.startPage = 'Start Page is required';
+    if (!formData.endPage) errors.endPage = 'End Page is required';
+    if (parseInt(formData.startPage) > parseInt(formData.endPage)) {
+      errors.endPage = 'End Page must be greater than or equal to Start Page';
+    }
+    if (!formData.username.trim()) errors.username = 'Username is required';
+    if (!formData.password.trim()) errors.password = 'Password is required';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e, actionType) => {
     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
+    
     const startPage = parseInt(formData.startPage);
     const endPage = parseInt(formData.endPage);
     if (startPage > endPage) {
@@ -32,45 +54,45 @@ const ScraperForm = () => {
     setError(null);
     setSuccessMessage(null);
     setAuctionData([]);
+    setProgress(0);
 
-    const onDataReceived = (data) => {
-      setAuctionData(prevData => [...prevData, data]);
-    };
+    const eventSource = scrapeAuctions(
+      startPage,
+      endPage,
+      formData.username,
+      formData.password,
+      formData.sortBy,
+      formData.sortDirection,
+      actionType
+    );
 
-    const onError = (errorMessage) => {
-      if (errorMessage.includes('Authentication failed')) {
-        setError('Authentication failed. Please check your username and password.');
-      } else {
-        setError(errorMessage);
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'progress') {
+        setProgress(data.value);
+      } else if (data.type === 'auction') {
+        setAuctionData((prevData) => [...prevData, data.auction]);
+      } else if (data.type === 'scraping_complete') {
+        setIsLoading(false);
+        if (auctionData.length === 0) {
+          setSuccessMessage('Scraping completed successfully, but no data was found.');
+        } else {
+          setSuccessMessage(data.message);
+        }
+        eventSource.close();
       }
-      setIsLoading(false);
     };
 
-    const onComplete = (errors) => {
+    eventSource.onerror = (error) => {
+      console.error('EventSource failed:', error);
+      setError('An error occurred while scraping. Please try again.');
       setIsLoading(false);
-      if (errors && errors.length > 0) {
-        setError(`Scraping completed with ${errors.length} errors.`);
-      } else {
-        setSuccessMessage(auctionData.length === 0 ? 'Scraping completed successfully. No data found.' : 'Scraping completed successfully!');
-      }
+      eventSource.close();
     };
 
-    try {
-      await scrapeAuctions(
-        startPage,
-        endPage,
-        formData.username,
-        formData.password,
-        formData.sortBy,
-        formData.sortDirection,
-        onDataReceived,
-        onError,
-        onComplete
-      );
-    } catch (error) {
-      setIsLoading(false);
-      setError('An unexpected error occurred. Please try again.');
-    }
+    eventSource.onopen = () => {
+      console.log('EventSource connection opened');
+    };
   };
 
   return (
@@ -84,7 +106,7 @@ const ScraperForm = () => {
           </button>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="scraper-form">
+      <form className="scraper-form" onSubmit={(e) => e.preventDefault()}>
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="startPage">Start Page:</label>
@@ -97,6 +119,7 @@ const ScraperForm = () => {
               min="1"
               required
             />
+            {formErrors.startPage && <span className="error-message">{formErrors.startPage}</span>}
           </div>
           <div className="form-group">
             <label htmlFor="endPage">End Page:</label>
@@ -109,6 +132,7 @@ const ScraperForm = () => {
               min="1"
               required
             />
+            {formErrors.endPage && <span className="error-message">{formErrors.endPage}</span>}
           </div>
         </div>
         <div className="form-row">
@@ -141,7 +165,7 @@ const ScraperForm = () => {
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="username">Username:</label>
+            <label htmlFor="username">Username(whois):</label>
             <input
               id="username"
               name="username"
@@ -150,9 +174,10 @@ const ScraperForm = () => {
               onChange={handleChange}
               required
             />
+            {formErrors.username && <span className="error-message">{formErrors.username}</span>}
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">Password(whois):</label>
             <input
               id="password"
               name="password"
@@ -161,16 +186,22 @@ const ScraperForm = () => {
               onChange={handleChange}
               required
             />
+            {formErrors.password && <span className="error-message">{formErrors.password}</span>}
           </div>
         </div>
-        <button type="submit" className="submit-button" disabled={isLoading}>
-          {isLoading ? 'Scraping...' : 'Scrape Auctions'}
-        </button>
+        <div className="form-row">
+          <button type="button" className="submit-button" disabled={isLoading} onClick={(e) => handleSubmit(e, 'view')}>
+            {isLoading ? 'Scraping...' : 'View'}
+          </button>
+          <button type="button" className="submit-button" disabled={isLoading} onClick={(e) => handleSubmit(e, 'saveAndView')}>
+            {isLoading ? 'Scraping...' : 'Save and View'}
+          </button>
+        </div>
       </form>
       {isLoading && (
         <div className="scraper-form-loading-container">
           <div className="scraper-form-loading-spinner"></div>
-          <p>Scraping in progress...</p>
+          <p>Scraping in progress... {progress}%</p>
         </div>
       )}
       {successMessage && <div className="success-message">{successMessage}</div>}
@@ -185,7 +216,9 @@ const ScraperForm = () => {
                 <p><strong>Price:</strong> {auction.domain_price}</p>
                 <p><strong>Bids:</strong> {auction.total_bids}</p>
                 <p><strong>Close Date:</strong> {auction.close_date}</p>
-                <p><strong>Top Bid:</strong> {auction.top_bids[0].amount} by {auction.top_bids[0].user}</p>
+                {auction.top_bids && auction.top_bids.length > 0 && (
+                  <p><strong>Top Bid:</strong> {auction.top_bids[0].amount} by {auction.top_bids[0].user}</p>
+                )}
               </div>
             ))}
           </div>
