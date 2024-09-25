@@ -21,7 +21,7 @@ const App = () => {
   };
 
   return (
-    <Router>
+    <Router basename='/scraper'>
       <div className="App">
         <Navbar token={token} setToken={setTokenAndStore} />
         <main className="main-content">
